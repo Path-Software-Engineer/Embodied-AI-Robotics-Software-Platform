@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://path-software-engineer.example/contracts/robot-state.v1.schema.json",
+  "title": "RobotState v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "robot_id", "frame_id", "clock_domain", "simulation_time_ns", "observed_wall_time_ns", "sequence", "source", "correlation_id", "links"],
+  "properties": {
+    "schema_version": {"const": "robot-state.v1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "robot_id": {"type": "string", "minLength": 1},
+    "frame_id": {"type": "string", "minLength": 1},
+    "clock_domain": {"const": "gazebo_sim"},
+    "simulation_time_ns": {"type": "integer", "minimum": 0},
+    "observed_wall_time_ns": {"type": "integer", "minimum": 0},
+    "sequence": {"type": "integer", "minimum": 1},
+    "source": {"const": "gazebo/ros_gz_bridge"},
+    "correlation_id": {"type": "string", "minLength": 1},
+    "links": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["link_name", "position_m", "orientation"],
+        "properties": {
+          "link_name": {"type": "string", "minLength": 1},
+          "position_m": {"$ref": "#/$defs/vector3"},
+          "orientation": {"$ref": "#/$defs/quaternion"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "vector3": {"type": "object", "additionalProperties": false, "required": ["x", "y", "z"], "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "z": {"type": "number"}}},
+    "quaternion": {"type": "object", "additionalProperties": false, "required": ["x", "y", "z", "w"], "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "z": {"type": "number"}, "w": {"type": "number"}}}
+  }
+}

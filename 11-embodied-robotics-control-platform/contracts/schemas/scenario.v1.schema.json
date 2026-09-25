@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.paths.local/embodied/scenario.v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scenario_id", "run_id_policy", "run_id_prefix", "robot_id", "world_id", "simulator", "clock_domain", "seed", "physics_step_seconds", "goal", "constraints", "asset_manifest"],
+  "properties": {
+    "schema_version": {"const": "embodied-scenario.v1"},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "run_id_policy": {"const": "generated_per_start"},
+    "run_id_prefix": {"const": "studio-"},
+    "robot_id": {"type": "string", "minLength": 1},
+    "world_id": {"type": "string", "minLength": 1},
+    "simulator": {"type": "string", "minLength": 1},
+    "clock_domain": {"const": "gazebo_sim"},
+    "seed": {"type": "integer", "minimum": 0},
+    "physics_step_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "asset_manifest": {"type": "string", "minLength": 1},
+    "goal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["joint_name", "target_radians", "tolerance_radians", "deadline_seconds"],
+      "properties": {
+        "joint_name": {"const": "left_shoulder"},
+        "target_radians": {"type": "number", "minimum": -0.8, "maximum": 0.8},
+        "tolerance_radians": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1},
+        "deadline_seconds": {"type": "integer", "minimum": 1, "maximum": 30}
+      }
+    },
+    "constraints": {
+      "type": "object", "additionalProperties": false,
+      "required": ["joint_lower_radians", "joint_upper_radians", "simulation_only"],
+      "properties": {
+        "joint_lower_radians": {"const": -0.8},
+        "joint_upper_radians": {"const": 0.8},
+        "simulation_only": {"const": true}
+      }
+    }
+  }
+}

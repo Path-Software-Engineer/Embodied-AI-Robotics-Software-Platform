@@ -1,0 +1,7 @@
+fastapi==0.115.12
+uvicorn==0.34.3
+websockets==15.0.1
+grpcio==1.74.0
+grpcio-tools==1.74.0
+asyncpg==0.30.0
+pydantic==2.11.7

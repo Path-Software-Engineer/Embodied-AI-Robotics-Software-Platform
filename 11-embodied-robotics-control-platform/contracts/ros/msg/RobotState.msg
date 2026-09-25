@@ -1,0 +1,12 @@
+string schema_version
+string run_id
+string robot_id
+string frame_id
+string clock_domain
+int64 simulation_time_ns
+int64 observed_wall_time_ns
+uint64 sequence
+string source
+string correlation_id
+geometry_msgs/Pose[] link_poses
+string[] link_names

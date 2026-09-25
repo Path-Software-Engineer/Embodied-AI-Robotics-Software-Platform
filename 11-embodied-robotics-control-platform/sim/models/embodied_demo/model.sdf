@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="embodied_demo">
+    <pose>0 0 0 0 0 0</pose>
+    <static>false</static>
+    <link name="torso">
+      <pose>0 0 1.05 0 0 0</pose>
+      <inertial><mass>8</mass><inertia><ixx>0.15</ixx><iyy>0.15</iyy><izz>0.12</izz></inertia></inertial>
+      <collision name="body"><geometry><box><size>0.48 0.28 0.7</size></box></geometry></collision>
+      <visual name="body"><geometry><box><size>0.48 0.28 0.7</size></box></geometry><material><ambient>0.1 0.37 0.45 1</ambient><diffuse>0.1 0.37 0.45 1</diffuse></material></visual>
+    </link>
+    <link name="head">
+      <pose>0 0 1.62 0 0 0</pose>
+      <inertial><mass>1</mass><inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz></inertia></inertial>
+      <collision name="head"><geometry><sphere><radius>0.15</radius></sphere></geometry></collision>
+      <visual name="head"><geometry><sphere><radius>0.15</radius></sphere></geometry><material><ambient>0.82 0.83 0.78 1</ambient><diffuse>0.82 0.83 0.78 1</diffuse></material></visual>
+    </link>
+    <joint name="neck" type="fixed"><parent>torso</parent><child>head</child></joint>
+    <link name="left_arm">
+      <pose>0 0.39 1.08 0 0 0</pose>
+      <inertial><mass>0.2</mass><inertia><ixx>0.004</ixx><iyy>0.004</iyy><izz>0.002</izz></inertia></inertial>
+      <collision name="arm"><geometry><box><size>0.12 0.52 0.12</size></box></geometry></collision>
+      <visual name="arm"><geometry><box><size>0.12 0.52 0.12</size></box></geometry><material><ambient>0.8 0.55 0.22 1</ambient><diffuse>0.8 0.55 0.22 1</diffuse></material></visual>
+    </link>
+    <joint name="left_shoulder" type="revolute">
+      <parent>torso</parent><child>left_arm</child>
+      <pose relative_to="torso">0 0.17 0.05 0 0 0</pose>
+      <axis><xyz>1 0 0</xyz><limit><lower>-0.8</lower><upper>0.8</upper><effort>100</effort><velocity>1.0</velocity></limit></axis>
+    </joint>
+    <joint name="ground_anchor" type="fixed"><parent>world</parent><child>torso</child></joint>
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose><publish_model_pose>true</publish_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg><update_frequency>20</update_frequency>
+      <topic>/model/embodied_demo/pose</topic>
+    </plugin>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>left_shoulder</joint_name><topic>/model/embodied_demo/left_shoulder/cmd_pos</topic>
+      <p_gain>100</p_gain><cmd_max>100</cmd_max><cmd_min>-100</cmd_min>
+    </plugin>
+  </model>
+</sdf>

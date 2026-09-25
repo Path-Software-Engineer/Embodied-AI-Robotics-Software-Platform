@@ -1,0 +1,24 @@
+{
+  "schema_version": "embodied-scenario.v1",
+  "scenario_id": "studio-joint-motion",
+  "run_id_policy": "generated_per_start",
+  "run_id_prefix": "studio-",
+  "robot_id": "embodied_demo",
+  "world_id": "studio",
+  "simulator": "Gazebo Sim 8.15.0",
+  "clock_domain": "gazebo_sim",
+  "seed": 1695,
+  "physics_step_seconds": 0.001,
+  "goal": {
+    "joint_name": "left_shoulder",
+    "target_radians": 0.4,
+    "tolerance_radians": 0.05,
+    "deadline_seconds": 8
+  },
+  "constraints": {
+    "joint_lower_radians": -0.8,
+    "joint_upper_radians": 0.8,
+    "simulation_only": true
+  },
+  "asset_manifest": "../assets/manifest.v1.json"
+}

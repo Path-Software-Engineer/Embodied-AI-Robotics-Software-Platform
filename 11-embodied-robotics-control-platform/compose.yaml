@@ -1,0 +1,70 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.29.0-pg17@sha256:3e65c273cbf7218f2a28692492b4625b49f35c7d2142e945561ef52311a8c83a
+    environment:
+      POSTGRES_DB: embodied
+      POSTGRES_USER: embodied
+      POSTGRES_PASSWORD: local-simulation-only
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+      - ./infra/migrations/0001_robot_state.sql:/docker-entrypoint-initdb.d/0001_robot_state.sql:ro
+      - ./infra/migrations/0002_loop_events.sql:/docker-entrypoint-initdb.d/0002_loop_events.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U embodied -d embodied"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  sim:
+    image: embodied-robotics-runtime:s1
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.robot
+    environment:
+      RUN_ID: ${EMBODIED_RUN_ID:-}
+      ROS_DOMAIN_ID: 34
+      GZ_SIM_RESOURCE_PATH: /workspace/sim/models
+    volumes:
+      - ./infra/start-simulator.sh:/usr/local/bin/start-simulator:ro
+      - ./services:/workspace/services:ro
+    command: ["/usr/local/bin/start-simulator"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import grpc; from services.generated import robot_state_pb2, robot_state_pb2_grpc; c=grpc.insecure_channel('localhost:50051'); robot_state_pb2_grpc.RobotStateServiceStub(c).Latest(robot_state_pb2.Empty(), timeout=2)"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+      start_period: 20s
+  gateway:
+    image: embodied-robotics-runtime:s1
+    environment:
+      DATABASE_URL: postgresql://embodied:local-simulation-only@timescaledb:5432/embodied
+      ROBOT_STATE_GRPC: sim:50051
+      WEB_ORIGIN: http://127.0.0.1:3000
+    volumes:
+      - ./services:/workspace/services:ro
+    command: ["uvicorn", "services.gateway:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      timescaledb: { condition: service_healthy }
+      sim: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  web:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.web
+    depends_on:
+      gateway: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>{if(!r.ok) process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  timescale-data:
