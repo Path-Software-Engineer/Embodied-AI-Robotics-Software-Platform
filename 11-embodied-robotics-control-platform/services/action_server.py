@@ -10,7 +10,7 @@ from collections import deque
 import rclpy
 from embodied_interfaces.action import MoveJoint
 from embodied_interfaces.msg import LoopEvent
-from embodied_interfaces.srv import AuthorizeMotion
+from embodied_interfaces.srv import AuthorizeMotion, ControlAuthority
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
@@ -42,6 +42,9 @@ class SimulationActionServer(Node):
         self.events = self.create_publisher(LoopEvent, "/simulation/loop_events", 20)
         self.safety = self.create_client(
             AuthorizeMotion, "/simulation/authorize_motion", callback_group=self.group
+        )
+        self.control = self.create_client(
+            ControlAuthority, "/simulation/control_authority", callback_group=self.group
         )
         self.server = ActionServer(
             self,
@@ -89,6 +92,7 @@ class SimulationActionServer(Node):
             and request.robot_id == "embodied_demo"
             and request.joint_name == "left_shoulder"
             and bool(request.correlation_id)
+            and bool(request.lease_id)
             and request.command_sequence > 0
             and math.isfinite(request.target_radians)
             and abs(request.target_radians) <= 0.8
@@ -122,6 +126,7 @@ class SimulationActionServer(Node):
         authorization.target_radians = goal.target_radians
         authorization.command_sequence = goal.command_sequence
         authorization.correlation_id = goal.correlation_id
+        authorization.lease_id = goal.lease_id
         future = self.safety.call_async(authorization)
         deadline = time.monotonic() + 2
         while not future.done() and time.monotonic() < deadline:
@@ -135,11 +140,10 @@ class SimulationActionServer(Node):
             return result
         self.emit(goal, "safety", "authorized", future.result().reason)
         command = Float64()
-        command.data = goal.target_radians
-        self.publisher.publish(command)
-        self.emit(goal, "action", "dispatched", "joint target published to ROS-Gazebo bridge")
         deadline = time.monotonic() + 8
         feedback_count = 0
+        last_authority_check = 0.0
+        dispatched = False
         while time.monotonic() < deadline:
             if goal_handle.is_cancel_requested:
                 if self.latest_angle is not None:
@@ -150,18 +154,40 @@ class SimulationActionServer(Node):
                 result.final_radians = self.latest_angle or 0.0
                 self.emit(goal, "feedback", "cancelled", result.reason)
                 return result
+            if time.monotonic() - last_authority_check >= 0.2:
+                last_authority_check = time.monotonic()
+                check = ControlAuthority.Request()
+                check.operation = "status"
+                check.run_id = goal.run_id
+                check.lease_id = goal.lease_id
+                if not self.control.wait_for_service(timeout_sec=0.2):
+                    active = False
+                else:
+                    check_future = self.control.call_async(check)
+                    check_deadline = time.monotonic() + 0.25
+                    while not check_future.done() and time.monotonic() < check_deadline:
+                        time.sleep(0.01)
+                    active = (
+                        check_future.done()
+                        and check_future.result() is not None
+                        and check_future.result().allowed
+                        and check_future.result().lease_matches
+                        and not check_future.result().estop_latched
+                        and check_future.result().mode != "Disarmed"
+                    )
+                if not active:
+                    command.data = self.latest_angle or 0.0
+                    self.publisher.publish(command)
+                    goal_handle.abort()
+                    result.reason = "control lease, mode or supervisor status lost"
+                    result.final_radians = self.latest_angle or 0.0
+                    self.emit(goal, "feedback", "failed", result.reason)
+                    return result
             if self.latest_angle is None or time.time_ns() - self.last_pose_wall_ns > 1_000_000_000:
                 goal_handle.abort()
                 result.reason = "pose feedback lost"
                 self.emit(goal, "feedback", "failed", result.reason)
                 return result
-            feedback = MoveJoint.Feedback()
-            feedback.current_radians = self.latest_angle
-            feedback.stage = "moving"
-            goal_handle.publish_feedback(feedback)
-            feedback_count += 1
-            if feedback_count % 10 == 1:
-                self.emit(goal, "feedback", "moving", "joint angle observed from Gazebo pose")
             if abs(self.latest_angle - goal.target_radians) < 0.05:
                 goal_handle.succeed()
                 result.succeeded = True
@@ -169,6 +195,24 @@ class SimulationActionServer(Node):
                 result.final_radians = self.latest_angle
                 self.emit(goal, "feedback", "completed", result.reason)
                 return result
+            error_radians = goal.target_radians - self.latest_angle
+            command.data = self.latest_angle + max(-0.02, min(0.02, error_radians))
+            self.publisher.publish(command)
+            if not dispatched:
+                dispatched = True
+                self.emit(
+                    goal,
+                    "action",
+                    "dispatched",
+                    "bounded 0.02 rad setpoint increments through ROS-Gazebo bridge",
+                )
+            feedback = MoveJoint.Feedback()
+            feedback.current_radians = self.latest_angle
+            feedback.stage = "moving"
+            goal_handle.publish_feedback(feedback)
+            feedback_count += 1
+            if feedback_count % 10 == 1:
+                self.emit(goal, "feedback", "moving", "joint angle observed from Gazebo pose")
             time.sleep(0.05)
         goal_handle.abort()
         result.reason = "simulated movement timed out"

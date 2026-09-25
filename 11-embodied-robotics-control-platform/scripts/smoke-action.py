@@ -11,10 +11,37 @@ from pathlib import Path
 import rclpy
 from action_msgs.msg import GoalStatus
 from embodied_interfaces.action import MoveJoint
+from embodied_interfaces.srv import ControlAuthority
 from rclpy.action import ActionClient
 
 
-def goal(client: ActionClient, node, run_id: str, target: float, sequence: int, trace: str):
+def authority(client, node, run_id: str, lease_id: str, operation: str, mode: str = ""):
+    request = ControlAuthority.Request()
+    request.operation = operation
+    request.run_id = run_id
+    request.lease_id = lease_id
+    request.actor_id = "sprint1-smoke"
+    request.requested_mode = mode
+    request.ttl_seconds = 30 if operation == "acquire" else 0
+    request.confirmed = operation == "mode"
+    future = client.call_async(request)
+    rclpy.spin_until_future_complete(node, future, timeout_sec=5)
+    if not future.done() or not future.result().allowed:
+        raise RuntimeError(
+            f"supervisor rejected {operation}: {future.result() if future.done() else 'timeout'}"
+        )
+    return future.result()
+
+
+def goal(
+    client: ActionClient,
+    node,
+    run_id: str,
+    target: float,
+    sequence: int,
+    trace: str,
+    lease_id: str,
+):
     request = MoveJoint.Goal()
     request.run_id = run_id
     request.robot_id = "embodied_demo"
@@ -22,6 +49,7 @@ def goal(client: ActionClient, node, run_id: str, target: float, sequence: int, 
     request.target_radians = target
     request.command_sequence = sequence
     request.correlation_id = trace
+    request.lease_id = lease_id
     future = client.send_goal_async(request)
     rclpy.spin_until_future_complete(node, future, timeout_sec=10)
     if not future.done():
@@ -49,23 +77,35 @@ def main() -> None:
     if not run_id.startswith(scenario["run_id_prefix"]):
         raise RuntimeError("runtime run ID does not follow the scenario manifest")
     trace = f"sprint1-smoke-{uuid.uuid4().hex[:12]}"
+    command_sequence = time.time_ns()
     rclpy.init()
     node = rclpy.create_node("sprint1_action_smoke")
     client = ActionClient(node, MoveJoint, "/simulation/move_joint")
+    control = node.create_client(ControlAuthority, "/simulation/control_authority")
+    lease_id = f"smoke-{uuid.uuid4().hex}"
     try:
         if not client.wait_for_server(timeout_sec=20):
             raise RuntimeError("ROS Action server unavailable")
-        result = goal(client, node, run_id, target, 1, trace)
+        if not control.wait_for_service(timeout_sec=10):
+            raise RuntimeError("independent supervisor unavailable")
+        authority(control, node, run_id, lease_id, "acquire")
+        authority(control, node, run_id, lease_id, "mode", "Manual")
+        result = goal(client, node, run_id, target, command_sequence, trace, lease_id)
         if result is None or result.status != GoalStatus.STATUS_SUCCEEDED:
             raise RuntimeError(f"simulated action failed: {result}")
         if not result.result.succeeded or abs(result.result.final_radians - target) > tolerance:
             raise RuntimeError("Gazebo joint feedback did not reach target")
-        duplicate = goal(client, node, run_id, 0.2, 1, f"{trace}-duplicate")
+        duplicate = goal(
+            client, node, run_id, 0.2, command_sequence, f"{trace}-duplicate", lease_id
+        )
         if duplicate is None or duplicate.status != GoalStatus.STATUS_ABORTED:
             raise RuntimeError("duplicate command sequence was not blocked")
         if "duplicate" not in duplicate.result.reason:
             raise RuntimeError("safety supervisor did not explain the duplicate rejection")
-        if goal(client, node, run_id, 1.1, 2, f"{trace}-unsafe") is not None:
+        if (
+            goal(client, node, run_id, 1.1, command_sequence + 1, f"{trace}-unsafe", lease_id)
+            is not None
+        ):
             raise RuntimeError("out-of-range target was admitted")
 
         events = []
@@ -110,6 +150,11 @@ def main() -> None:
             )
         )
     finally:
+        if control.service_is_ready():
+            try:
+                authority(control, node, run_id, lease_id, "revoke")
+            except RuntimeError:
+                pass
         node.destroy_node()
         rclpy.shutdown()
 

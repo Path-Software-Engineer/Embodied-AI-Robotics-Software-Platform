@@ -16,6 +16,7 @@ import grpc
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from services.control_api import create_router
 from services.generated import robot_state_pb2, robot_state_pb2_grpc
 
 
@@ -241,7 +242,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await asyncio.gather(reader, writer, loop_reader, loop_writer, return_exceptions=True)
 
 
-app = FastAPI(title="Embodied Robotics Simulation API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Embodied Robotics Simulation API", version="0.2.0", lifespan=lifespan)
+app.include_router(create_router(hub))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[os.environ.get("WEB_ORIGIN", "http://127.0.0.1:3000")],

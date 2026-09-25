@@ -7,6 +7,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RobotState.msg"
   "msg/LoopEvent.msg"
   "srv/AuthorizeMotion.srv"
+  "srv/ControlAuthority.srv"
   "action/MoveJoint.action"
   DEPENDENCIES geometry_msgs
 )

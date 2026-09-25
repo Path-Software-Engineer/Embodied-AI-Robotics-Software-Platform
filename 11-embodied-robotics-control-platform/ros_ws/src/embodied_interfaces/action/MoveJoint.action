@@ -4,6 +4,7 @@ string joint_name
 float64 target_radians
 uint64 command_sequence
 string correlation_id
+string lease_id
 ---
 bool succeeded
 string reason

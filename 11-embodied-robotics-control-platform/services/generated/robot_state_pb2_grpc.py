@@ -181,3 +181,204 @@ class RobotStateService(object):
             timeout,
             metadata,
             _registered_method=True)
+
+
+class ControlServiceStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.Authority = channel.unary_unary(
+                '/embodied.robot_state.v1.ControlService/Authority',
+                request_serializer=robot__state__pb2.ControlRequest.SerializeToString,
+                response_deserializer=robot__state__pb2.ControlReply.FromString,
+                _registered_method=True)
+        self.Plan = channel.unary_unary(
+                '/embodied.robot_state.v1.ControlService/Plan',
+                request_serializer=robot__state__pb2.PlanRequest.SerializeToString,
+                response_deserializer=robot__state__pb2.PlanReply.FromString,
+                _registered_method=True)
+        self.Execute = channel.unary_unary(
+                '/embodied.robot_state.v1.ControlService/Execute',
+                request_serializer=robot__state__pb2.ExecuteRequest.SerializeToString,
+                response_deserializer=robot__state__pb2.ExecuteReply.FromString,
+                _registered_method=True)
+        self.Cancel = channel.unary_unary(
+                '/embodied.robot_state.v1.ControlService/Cancel',
+                request_serializer=robot__state__pb2.CancelRequest.SerializeToString,
+                response_deserializer=robot__state__pb2.CancelReply.FromString,
+                _registered_method=True)
+
+
+class ControlServiceServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def Authority(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Plan(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Execute(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Cancel(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_ControlServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'Authority': grpc.unary_unary_rpc_method_handler(
+                    servicer.Authority,
+                    request_deserializer=robot__state__pb2.ControlRequest.FromString,
+                    response_serializer=robot__state__pb2.ControlReply.SerializeToString,
+            ),
+            'Plan': grpc.unary_unary_rpc_method_handler(
+                    servicer.Plan,
+                    request_deserializer=robot__state__pb2.PlanRequest.FromString,
+                    response_serializer=robot__state__pb2.PlanReply.SerializeToString,
+            ),
+            'Execute': grpc.unary_unary_rpc_method_handler(
+                    servicer.Execute,
+                    request_deserializer=robot__state__pb2.ExecuteRequest.FromString,
+                    response_serializer=robot__state__pb2.ExecuteReply.SerializeToString,
+            ),
+            'Cancel': grpc.unary_unary_rpc_method_handler(
+                    servicer.Cancel,
+                    request_deserializer=robot__state__pb2.CancelRequest.FromString,
+                    response_serializer=robot__state__pb2.CancelReply.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'embodied.robot_state.v1.ControlService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('embodied.robot_state.v1.ControlService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class ControlService(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def Authority(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/embodied.robot_state.v1.ControlService/Authority',
+            robot__state__pb2.ControlRequest.SerializeToString,
+            robot__state__pb2.ControlReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Plan(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/embodied.robot_state.v1.ControlService/Plan',
+            robot__state__pb2.PlanRequest.SerializeToString,
+            robot__state__pb2.PlanReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Execute(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/embodied.robot_state.v1.ControlService/Execute',
+            robot__state__pb2.ExecuteRequest.SerializeToString,
+            robot__state__pb2.ExecuteReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Cancel(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/embodied.robot_state.v1.ControlService/Cancel',
+            robot__state__pb2.CancelRequest.SerializeToString,
+            robot__state__pb2.CancelReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)

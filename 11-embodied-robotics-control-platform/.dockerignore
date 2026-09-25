@@ -5,7 +5,9 @@ node_modules
 dist
 **/dist
 test-results
+**/test-results
 playwright-report
+**/playwright-report
 **/__pycache__
 **/.pytest_cache
 **/.ruff_cache

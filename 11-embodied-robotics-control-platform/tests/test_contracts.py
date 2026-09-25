@@ -6,7 +6,7 @@ import jsonschema
 import pytest
 
 from services.domain import LinkPose, Quaternion, RobotState, Vector3
-from services.gateway import StateHub, as_loop_event, as_state
+from services.gateway import StateHub, app, as_loop_event, as_state
 from services.generated import robot_state_pb2
 
 
@@ -125,6 +125,23 @@ def test_websocket_channels_are_observation_only() -> None:
     assert contract["asyncapi"] == "3.0.0"
     assert set(contract["channels"]) == {"robotState", "loopEvents"}
     assert all(operation["action"] == "receive" for operation in contract["operations"].values())
+
+
+def test_sprint_two_ros_contract_mirrors_and_http_surface() -> None:
+    for kind, names in {
+        "srv": ("AuthorizeMotion.srv", "ControlAuthority.srv"),
+        "action": ("MoveJoint.action",),
+    }.items():
+        for name in names:
+            assert (
+                Path(f"contracts/ros/{kind}/{name}").read_bytes()
+                == Path(f"ros_ws/src/embodied_interfaces/{kind}/{name}").read_bytes()
+            )
+    spec = app.openapi()
+    assert spec["info"]["version"] == "0.2.0"
+    assert "/api/v2/control/leases" in spec["paths"]
+    assert "/api/v2/plans/{plan_id}/execute" in spec["paths"]
+    assert "post" not in spec["paths"]["/api/v1/simulation-runs/{run_id}/samples"]
 
 
 def test_python_runtime_lock_covers_direct_dependencies() -> None:

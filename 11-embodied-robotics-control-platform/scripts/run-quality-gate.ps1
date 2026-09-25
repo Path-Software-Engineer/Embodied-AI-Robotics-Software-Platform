@@ -13,6 +13,9 @@ function Invoke-Checked {
 if (-not (Test-Path $Python) -or -not (Test-Path "apps/web/node_modules")) {
     throw "Run .\scripts\setup.ps1 before this quality gate."
 }
+if (-not $env:EMBODIED_OPERATOR_TOKEN -or $env:EMBODIED_OPERATOR_TOKEN.Length -lt 32) {
+    $env:EMBODIED_OPERATOR_TOKEN = [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+}
 
 Write-Host "[1/5] Static contracts and code"
 $env:PYTHONPATH = "$Root;$Root\services\generated"
@@ -41,18 +44,24 @@ try {
         docker compose exec -T sim bash -lc `
             'source /opt/ros/jazzy/setup.bash; source /workspace/ros_ws/install/setup.bash; cd /workspace/ros_ws; colcon test --packages-select safety_supervisor --event-handlers console_cohesion+ && colcon test-result --verbose'
     }
-    Write-Host "[4/5] Running real Gazebo/ROS Action acceptance"
+    Write-Host "[4/5] Running real Gazebo/ROS Action and control-board acceptance"
     Invoke-Checked "Action, safety, loop, persistence and replay smoke" {
         docker compose exec -T sim bash -lc `
             'source /opt/ros/jazzy/setup.bash; source /workspace/ros_ws/install/setup.bash; python /workspace/scripts/smoke-action.py'
     }
-    Invoke-Checked "Chrome desktop, fallback and mobile E2E" {
+    Invoke-Checked "Exclusive lease, plan, approval, real action and EStop smoke" {
+        & $Python scripts/smoke-control.py
+    }
+    Invoke-Checked "Local read and plan-persistence latency smoke" {
+        & $Python scripts/benchmark-control.py
+    }
+    Invoke-Checked "Chrome control board, replay, accessibility and mobile E2E" {
         npm run e2e --prefix apps/web
     }
     Write-Host "[5/5] Repository hygiene"
     Invoke-Checked "Git whitespace" { git diff --check }
     Invoke-Checked "Staged Git whitespace" { git diff --cached --check }
-    Write-Host "OK - Project 11 Sprint 1 quality gate passed"
+    Write-Host "OK - Project 11 Sprint 2 core quality gate passed (see docs/sprint-02/review.md)"
 }
 finally {
     docker compose down --remove-orphans | Out-Null

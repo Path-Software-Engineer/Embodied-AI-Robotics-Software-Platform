@@ -3,12 +3,12 @@ import AxeBuilder from '@axe-core/playwright'
 
 test('real simulator state, traced action and read-only replay are visible', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('status')).toContainText('LIVE SIMULATION', { timeout: 20_000 })
+  await expect(page.getByRole('status', { name: 'Estado de la simulación' })).toContainText('LIVE SIMULATION', { timeout: 20_000 })
   await expect(page.getByRole('table').getByRole('row')).toHaveCount(4)
   await expect(page.getByRole('region', { name: 'Ciclo embodied observado' })).toContainText('completed')
   await expect(page.getByRole('combobox', { name: 'Run persistido' })).toHaveValue(/studio-/)
   await page.getByRole('button', { name: 'Cargar replay' }).click()
-  await expect(page.getByRole('status')).toContainText('READ-ONLY REPLAY')
+  await expect(page.getByRole('status', { name: 'Estado de la simulación' })).toContainText('READ-ONLY REPLAY')
   await expect(page.getByRole('slider', { name: 'Muestra' })).toBeVisible()
   await expect(page.getByRole('combobox', { name: 'Velocidad' })).toHaveValue('1')
   await page.getByRole('combobox', { name: 'Velocidad' }).selectOption('2')
@@ -18,7 +18,7 @@ test('real simulator state, traced action and read-only replay are visible', asy
   await page.getByRole('slider', { name: 'Muestra' }).fill('1')
   await expect(page.getByRole('region', { name: 'Ciclo embodied observado' })).toContainText('completed')
   await page.getByRole('button', { name: 'Volver a vivo' }).click()
-  await expect(page.getByRole('status')).toContainText('LIVE SIMULATION')
+  await expect(page.getByRole('status', { name: 'Estado de la simulación' })).toContainText('LIVE SIMULATION')
 })
 
 test('keyboard access and explicit WebGL fallback preserve critical data', async ({ page }) => {
@@ -47,7 +47,7 @@ test('mobile observatory keeps table and replay controls available', async ({ pa
 
 test('automated accessibility audit has no serious or critical violations', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('status')).toContainText('LIVE SIMULATION', { timeout: 20_000 })
+  await expect(page.getByRole('status', { name: 'Estado de la simulación' })).toContainText('LIVE SIMULATION', { timeout: 20_000 })
   const results = await new AxeBuilder({ page }).analyze()
   const blocking = results.violations.filter(item =>
     item.impact === 'serious' || item.impact === 'critical')

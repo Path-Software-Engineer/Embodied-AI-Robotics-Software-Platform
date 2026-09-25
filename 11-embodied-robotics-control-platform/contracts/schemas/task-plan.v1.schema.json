@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://path-software-engineer.local/contracts/task-plan.v1.schema.json",
+  "title": "Snapshot-bound simulation TaskPlan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "plan_id", "run_id", "robot_id", "snapshot_sequence",
+    "snapshot_wall_time_ns", "snapshot_hash", "snapshot_joint_radians",
+    "created_wall_time_ns", "source", "nodes"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-plan.v1" },
+    "plan_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "robot_id": { "const": "embodied_demo" },
+    "snapshot_sequence": { "type": "integer", "minimum": 1 },
+    "snapshot_wall_time_ns": { "type": "integer", "minimum": 1 },
+    "snapshot_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "snapshot_joint_radians": { "type": "number", "minimum": -0.8, "maximum": 0.8 },
+    "created_wall_time_ns": { "type": "integer", "minimum": 1 },
+    "source": { "const": "bounded-deterministic-planner" },
+    "nodes": {
+      "type": "array", "minItems": 1, "maxItems": 4,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["node_id", "action", "target_radians", "dependencies", "failure_policy", "requires_approval"],
+        "properties": {
+          "node_id": { "type": "string", "minLength": 1 },
+          "action": { "const": "move_joint" },
+          "target_radians": { "type": "number", "minimum": -0.8, "maximum": 0.8 },
+          "dependencies": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+          "failure_policy": { "const": "stop" },
+          "requires_approval": { "const": true }
+        }
+      }
+    }
+  }
+}

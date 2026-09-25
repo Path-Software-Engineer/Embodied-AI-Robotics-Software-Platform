@@ -58,3 +58,71 @@ service RobotStateService {
   rpc Watch(Empty) returns (stream RobotState);
   rpc WatchLoop(Empty) returns (stream LoopEvent);
 }
+
+message ControlRequest {
+  string operation = 1;
+  string run_id = 2;
+  string lease_id = 3;
+  string actor_id = 4;
+  string requested_mode = 5;
+  uint32 ttl_seconds = 6;
+  bool confirmed = 7;
+  string reason = 8;
+}
+
+message ControlReply {
+  bool allowed = 1;
+  string mode = 2;
+  bool estop_latched = 3;
+  string lease_id = 4;
+  bool lease_matches = 5;
+  string lease_owner = 6;
+  uint64 expires_at_wall_ms = 7;
+  string reason = 8;
+}
+
+message PlanRequest {
+  string plan_id = 1;
+  string run_id = 2;
+  double target_radians = 3;
+}
+
+message PlanReply {
+  string plan_json = 1;
+}
+
+message ExecuteRequest {
+  string run_id = 1;
+  string plan_id = 2;
+  string lease_id = 3;
+  string actor_id = 4;
+  double target_radians = 5;
+  string correlation_id = 6;
+}
+
+message ExecuteReply {
+  bool accepted = 1;
+  bool succeeded = 2;
+  bool canceled = 3;
+  string reason = 4;
+  double final_radians = 5;
+  uint64 command_sequence = 6;
+}
+
+message CancelRequest {
+  string run_id = 1;
+  string correlation_id = 2;
+  string lease_id = 3;
+}
+
+message CancelReply {
+  bool accepted = 1;
+  string reason = 2;
+}
+
+service ControlService {
+  rpc Authority(ControlRequest) returns (ControlReply);
+  rpc Plan(PlanRequest) returns (PlanReply);
+  rpc Execute(ExecuteRequest) returns (ExecuteReply);
+  rpc Cancel(CancelRequest) returns (CancelReply);
+}

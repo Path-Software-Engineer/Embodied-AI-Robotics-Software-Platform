@@ -1,0 +1,17 @@
+string operation
+string run_id
+string lease_id
+string actor_id
+string requested_mode
+uint32 ttl_seconds
+bool confirmed
+string reason
+---
+bool allowed
+string mode
+bool estop_latched
+string lease_id
+bool lease_matches
+string lease_owner
+uint64 expires_at_wall_ms
+string reason
