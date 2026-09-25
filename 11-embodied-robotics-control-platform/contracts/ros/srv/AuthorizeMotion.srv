@@ -1,0 +1,9 @@
+string run_id
+string robot_id
+string joint_name
+float64 target_radians
+uint64 command_sequence
+string correlation_id
+---
+bool allowed
+string reason

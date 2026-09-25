@@ -1,0 +1,13 @@
+string schema_version
+string run_id
+string robot_id
+string correlation_id
+string clock_domain
+int64 simulation_time_ns
+string stage
+string status
+uint64 event_sequence
+int64 observed_wall_time_ns
+float64 observed_joint_radians
+float64 target_joint_radians
+string detail

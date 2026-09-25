@@ -1,0 +1,15 @@
+FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS build
+WORKDIR /workspace
+COPY apps/web/package.json apps/web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY apps/web/ ./
+RUN npm run build && npm run test
+
+FROM node:24.19.0-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
+WORKDIR /workspace
+COPY --from=build /workspace/package.json /workspace/package-lock.json ./
+COPY --from=build /workspace/node_modules ./node_modules
+COPY --from=build /workspace/vite.config.ts ./vite.config.ts
+COPY --from=build /workspace/dist ./dist
+EXPOSE 3000
+CMD ["npm", "run", "preview"]

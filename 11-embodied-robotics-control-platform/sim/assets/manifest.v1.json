@@ -1,0 +1,19 @@
+{
+  "schema_version": "embodied-asset-manifest.v1",
+  "source": "original_project_11_assets",
+  "license": "Apache-2.0",
+  "assets": [
+    {
+      "path": "sim/worlds/studio.sdf",
+      "sha256": "bf324852828ecc4c2cab521fd4c7d657bf1bffa674a34f274d5b18428f94a7ed"
+    },
+    {
+      "path": "sim/models/embodied_demo/model.sdf",
+      "sha256": "9b9ed1d828b4d3e1dae56caaba5accce7f806340edf30cb4d5a345b6a43e00dd"
+    },
+    {
+      "path": "sim/models/embodied_demo/robot.urdf.xacro",
+      "sha256": "c1d49d4452a4d1b1921e279922bea3507c0fc2e311a1dfcf2a65bf4dd4ec4652"
+    }
+  ]
+}

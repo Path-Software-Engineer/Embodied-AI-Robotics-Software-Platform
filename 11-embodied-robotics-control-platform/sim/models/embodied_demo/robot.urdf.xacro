@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="embodied_demo">
+  <xacro:property name="shoulder_limit" value="0.8"/>
+  <link name="world"/>
+  <link name="torso">
+    <inertial><origin xyz="0 0 0"/><mass value="8"/>
+      <inertia ixx="0.15" ixy="0" ixz="0" iyy="0.15" iyz="0" izz="0.12"/>
+    </inertial>
+    <visual><geometry><box size="0.48 0.28 0.7"/></geometry></visual>
+    <collision><geometry><box size="0.48 0.28 0.7"/></geometry></collision>
+  </link>
+  <joint name="ground_anchor" type="fixed">
+    <parent link="world"/><child link="torso"/><origin xyz="0 0 1.05"/>
+  </joint>
+  <link name="head">
+    <inertial><mass value="1"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual><geometry><sphere radius="0.15"/></geometry></visual>
+    <collision><geometry><sphere radius="0.15"/></geometry></collision>
+  </link>
+  <joint name="neck" type="fixed">
+    <parent link="torso"/><child link="head"/><origin xyz="0 0 0.57"/>
+  </joint>
+  <link name="left_arm">
+    <inertial><origin xyz="0 0.22 -0.02"/><mass value="0.2"/>
+      <inertia ixx="0.004" ixy="0" ixz="0" iyy="0.004" iyz="0" izz="0.002"/>
+    </inertial>
+    <visual><origin xyz="0 0.22 -0.02"/><geometry><box size="0.12 0.52 0.12"/></geometry></visual>
+    <collision><origin xyz="0 0.22 -0.02"/><geometry><box size="0.12 0.52 0.12"/></geometry></collision>
+  </link>
+  <joint name="left_shoulder" type="revolute">
+    <parent link="torso"/><child link="left_arm"/><origin xyz="0 0.17 0.05"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-${shoulder_limit}" upper="${shoulder_limit}" effort="100" velocity="1.0"/>
+  </joint>
+</robot>
