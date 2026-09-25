@@ -1,41 +1,10 @@
-import { Canvas } from '@react-three/fiber'
 import { Activity, AlertTriangle, Box, Clock3, Database, Radio, RotateCcw, ShieldCheck } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { ControlBoard } from './ControlBoard'
-import type { LinkPose, LoopEvent, RobotState } from './state'
+import type { LoopEvent, RobotState } from './state'
 import { freshness, linksFromState, loopEventFromUnknown } from './state'
 
-const parts: Record<string, { scale: [number, number, number]; color: string }> = {
-  torso: { scale: [0.48, 0.28, 0.7], color: '#168ba0' },
-  head: { scale: [0.3, 0.3, 0.3], color: '#d7ded6' },
-  left_arm: { scale: [0.12, 0.52, 0.12], color: '#e8aa55' },
-}
-
-function RobotPart({ link }: { link: LinkPose }) {
-  const part = parts[link.link_name]
-  if (!part) return null
-  const scale = part.scale
-  const p = link.position_m
-  const q = link.orientation
-  return (
-    <mesh position={[p.x, p.y, p.z]} quaternion={[q.x, q.y, q.z, q.w]}>
-      {link.link_name === 'head' ? <sphereGeometry args={[0.15, 16, 16]} /> : <boxGeometry args={scale} />}
-      <meshStandardMaterial color={part.color} roughness={0.42} metalness={0.25} />
-    </mesh>
-  )
-}
-
-function Twin({ state }: { state: RobotState | null }) {
-  return (
-    <Canvas camera={{ position: [2.4, -3.3, 2.3], fov: 42 }} gl={{ antialias: true }}>
-      <color attach="background" args={['#081522']} />
-      <ambientLight intensity={1.35} />
-      <directionalLight position={[2, -1, 4]} intensity={2.2} />
-      <gridHelper args={[4, 16, '#294a5c', '#173043']} rotation={[Math.PI / 2, 0, 0]} />
-      {state?.links.map(link => <RobotPart key={link.link_name} link={link} />)}
-    </Canvas>
-  )
-}
+const Twin = lazy(() => import('./Twin'))
 
 function useRobotState() {
   const [state, setState] = useState<RobotState | null>(null)
@@ -230,7 +199,7 @@ export function App() {
           {replayError && <p role="alert">{replayError}</p>}
         </section>
         <section className="metrics" aria-label="Estado de la evidencia"><div className="metric"><span><Clock3 size={15} aria-hidden="true" /> SIM CLOCK</span><strong>{simSeconds}<small> s</small></strong><p>Gazebo simulation time</p></div><div className="metric"><span><Activity size={15} aria-hidden="true" /> SEQUENCE</span><strong>{state?.sequence ?? '—'}</strong><p>Monotonic state sample</p></div><div className="metric"><span><Radio size={15} aria-hidden="true" /> SAMPLE AGE</span><strong>{age ?? '—'}<small> ms</small></strong><p>{status === 'live' ? 'Current observation' : 'Not valid for live decisions'}</p></div><div className="metric"><span><Database size={15} aria-hidden="true" /> SOURCE</span><strong className="metric-source">{state ? 'ROS 2' : '—'}</strong><p>Gazebo via ros_gz_bridge</p></div></section>
-        <div className="content-grid"><section className="panel twin-panel" aria-label="Gemelo digital"><div className="panel-heading"><div><p className="panel-kicker">DIGITAL TWIN / WORLD FRAME</p><h2>Robot state</h2></div><button className="text-button" onClick={() => setShow3D(value => !value)}>{show3D ? 'Vista tabular' : 'Vista 3D'}</button></div><div className="viewport">{show3D && !webglFailed ? <div className="canvas-wrap"><Twin state={state} /></div> : <div className="fallback"><Box size={36} aria-hidden="true" /><p>{webglFailed ? 'WebGL no disponible; datos accesibles en tabla.' : 'Vista tabular activa'}</p></div>}{!state && <div className="viewport-overlay"><RotateCcw size={22} aria-hidden="true" /><strong>Esperando pose verificada</strong><span>No se dibuja un robot ficticio mientras Gazebo/ROS no entregue estado.</span></div>}{status === 'stale' && <div className="stale-overlay"><AlertTriangle size={17} aria-hidden="true" /> La última pose está desactualizada.</div>}</div><div className="frame-meta"><span>FRAME <b>{state?.frame_id ?? '—'}</b></span><span>ROBOT <b>{state?.robot_id ?? '—'}</b></span><span>LINKS <b>{links.length}</b></span></div></section><section className="panel trace-panel"><div className="panel-heading"><div><p className="panel-kicker">EVIDENCE STREAM</p><h2>Trace &amp; provenance</h2></div><span className="read-only">READ ONLY</span></div><p className="stream-message">{message}</p><dl className="trace-list"><div><dt>Run ID</dt><dd>{state?.run_id ?? '—'}</dd></div><div><dt>Source</dt><dd>{state?.source ?? '—'}</dd></div><div><dt>Clock domain</dt><dd>{state?.clock_domain ?? '—'}</dd></div><div><dt>Correlation</dt><dd className="truncate" title={state?.correlation_id}>{state?.correlation_id ?? '—'}</dd></div></dl><div className="safety-note"><ShieldCheck size={19} aria-hidden="true" /><p>Esta pantalla observa. No autoriza movimientos ni sustituye una parada física de emergencia.</p></div></section></div>
+        <div className="content-grid"><section className="panel twin-panel" aria-label="Gemelo digital"><div className="panel-heading"><div><p className="panel-kicker">DIGITAL TWIN / WORLD FRAME</p><h2>Robot state</h2></div><button className="text-button" onClick={() => setShow3D(value => !value)}>{show3D ? 'Vista tabular' : 'Vista 3D'}</button></div><div className="viewport">{show3D && !webglFailed ? <div className="canvas-wrap"><Suspense fallback={<div className="fallback">Cargando vista 3D…</div>}><Twin state={state} /></Suspense></div> : <div className="fallback"><Box size={36} aria-hidden="true" /><p>{webglFailed ? 'WebGL no disponible; datos accesibles en tabla.' : 'Vista tabular activa'}</p></div>}{!state && <div className="viewport-overlay"><RotateCcw size={22} aria-hidden="true" /><strong>Esperando pose verificada</strong><span>No se dibuja un robot ficticio mientras Gazebo/ROS no entregue estado.</span></div>}{status === 'stale' && <div className="stale-overlay"><AlertTriangle size={17} aria-hidden="true" /> La última pose está desactualizada.</div>}</div><div className="frame-meta"><span>FRAME <b>{state?.frame_id ?? '—'}</b></span><span>ROBOT <b>{state?.robot_id ?? '—'}</b></span><span>LINKS <b>{links.length}</b></span></div></section><section className="panel trace-panel"><div className="panel-heading"><div><p className="panel-kicker">EVIDENCE STREAM</p><h2>Trace &amp; provenance</h2></div><span className="read-only">READ ONLY</span></div><p className="stream-message">{message}</p><dl className="trace-list"><div><dt>Run ID</dt><dd>{state?.run_id ?? '—'}</dd></div><div><dt>Source</dt><dd>{state?.source ?? '—'}</dd></div><div><dt>Clock domain</dt><dd>{state?.clock_domain ?? '—'}</dd></div><div><dt>Correlation</dt><dd className="truncate" title={state?.correlation_id}>{state?.correlation_id ?? '—'}</dd></div></dl><div className="safety-note"><ShieldCheck size={19} aria-hidden="true" /><p>Esta pantalla observa. No autoriza movimientos ni sustituye una parada física de emergencia.</p></div></section></div>
         <section className="panel loop-panel" aria-label="Ciclo embodied observado"><div className="panel-heading"><div><p className="panel-kicker">PERCEPTION → FEEDBACK / ROS EVIDENCE</p><h2>Agent loop</h2></div><span className="read-only">{replaying ? 'REPLAY' : 'OBSERVATION'}</span></div><div className="loop-grid">{(['perception', 'state', 'memory', 'intent', 'safety', 'action', 'feedback'] as const).map((stage, index) => { const event = [...currentLoop].reverse().find(item => item.stage === stage); return <div className={`loop-stage ${event ? 'observed' : ''}`} key={stage}><span className="loop-number">{String(index + 1).padStart(2, '0')}</span><h3>{stage}</h3><strong>{event?.status ?? 'Sin evidencia'}</strong><p>{event?.detail ?? 'Esperando evento ROS del run.'}</p>{event && <small>seq {event.event_sequence} · {event.observed_joint_radians.toFixed(3)} rad</small>}</div> })}</div><div className="loop-footer">Correlation ID: <code>{latestCorrelation ?? '—'}</code> · {currentLoop.length} eventos observados</div></section>
         <ControlBoard liveState={liveState} replaying={replaying} loopEvents={liveLoopEvents} />
         <section className="panel table-panel"><div className="panel-heading"><div><p className="panel-kicker">ACCESSIBLE STATE / SI UNITS</p><h2>Link positions</h2></div><span className="table-count">{links.length} records</span></div><div className="table-scroll"><table><thead><tr><th scope="col">Link</th><th scope="col">X (m)</th><th scope="col">Y (m)</th><th scope="col">Z (m)</th><th scope="col">Status</th></tr></thead><tbody>{links.length === 0 ? <tr><td colSpan={5}>Sin muestras verificadas. La tabla se actualizará al recibir ROS/Gazebo.</td></tr> : links.map(link => <tr key={link.link_name}><th scope="row">{link.link_name}</th><td>{link.position_m.x.toFixed(3)}</td><td>{link.position_m.y.toFixed(3)}</td><td>{link.position_m.z.toFixed(3)}</td><td>{status === 'live' ? 'Actual' : 'No actual'}</td></tr>)}</tbody></table></div></section>
