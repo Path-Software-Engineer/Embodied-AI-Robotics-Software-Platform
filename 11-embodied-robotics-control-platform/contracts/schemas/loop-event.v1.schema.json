@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://path-software-engineer.example/contracts/loop-event.v1.schema.json",
+  "title": "Embodied Loop Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "robot_id", "correlation_id", "clock_domain", "simulation_time_ns", "stage", "status", "event_sequence", "observed_wall_time_ns", "observed_joint_radians", "target_joint_radians", "detail"],
+  "properties": {
+    "schema_version": {"const": "embodied-loop-event.v1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "robot_id": {"type": "string", "minLength": 1},
+    "correlation_id": {"type": "string", "minLength": 1},
+    "clock_domain": {"const": "gazebo_sim"},
+    "simulation_time_ns": {"type": "integer", "minimum": 0},
+    "stage": {"enum": ["perception", "state", "memory", "intent", "safety", "action", "feedback"]},
+    "status": {"type": "string", "minLength": 1},
+    "event_sequence": {"type": "integer", "minimum": 1},
+    "observed_wall_time_ns": {"type": "integer", "minimum": 0},
+    "observed_joint_radians": {"type": "number"},
+    "target_joint_radians": {"type": "number", "minimum": -0.8, "maximum": 0.8},
+    "detail": {"type": "string"}
+  }
+}
