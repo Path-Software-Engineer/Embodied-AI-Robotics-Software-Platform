@@ -1,0 +1,36 @@
+{
+  "schema_version": "architecture-manifest.v1",
+  "system_id": "embodied-robotics-control-platform",
+  "scope": "simulation-only",
+  "components": [
+    {"id": "web", "name": "Observatory and control board", "kind": "web", "owner": "Software Engineer", "evidence_paths": ["apps/web/src/App.tsx", "apps/web/src/ControlBoard.tsx"], "depends_on": ["gateway"]},
+    {"id": "gateway", "name": "HTTP and WebSocket gateway", "kind": "service", "owner": "Software Engineer", "evidence_paths": ["services/gateway.py", "services/control_api.py"], "depends_on": ["orchestrator", "timescaledb"]},
+    {"id": "orchestrator", "name": "ROS and gRPC orchestrator", "kind": "service", "owner": "Software Engineer", "evidence_paths": ["services/orchestrator.py", "contracts/proto/robot_state.proto"], "depends_on": ["ros-action", "supervisor", "gazebo"]},
+    {"id": "ros-action", "name": "MoveJoint action server", "kind": "ros-node", "owner": "Software Engineer", "evidence_paths": ["services/action_server.py", "contracts/ros/action/MoveJoint.action"], "depends_on": ["supervisor", "gazebo"]},
+    {"id": "supervisor", "name": "Independent C++ simulation safety supervisor", "kind": "ros-node", "owner": "Software Engineer", "evidence_paths": ["ros_ws/src/safety_supervisor/src/safety_supervisor.cpp", "ros_ws/src/safety_supervisor/test/test_safety_rules.cpp"], "depends_on": ["gazebo"]},
+    {"id": "gazebo", "name": "Gazebo Sim studio", "kind": "simulator", "owner": "Software Engineer", "evidence_paths": ["sim/worlds/studio.sdf", "sim/models/embodied_demo/robot.urdf.xacro"], "depends_on": []},
+    {"id": "timescaledb", "name": "Temporal evidence store", "kind": "database", "owner": "Software Engineer", "evidence_paths": ["infra/migrations/0001_robot_state.sql", "infra/migrations/0003_control_board.sql"], "depends_on": []}
+  ],
+  "interfaces": [
+    {"id": "web-http", "protocol": "HTTP", "from": "web", "to": "gateway", "contract_path": "services/gateway.py", "authority": "operator-token-for-control", "timing": "request-response"},
+    {"id": "web-stream", "protocol": "WebSocket", "from": "gateway", "to": "web", "contract_path": "contracts/websocket/asyncapi.json", "authority": "observation-only", "timing": "bounded-queue"},
+    {"id": "gateway-grpc", "protocol": "gRPC", "from": "gateway", "to": "orchestrator", "contract_path": "contracts/proto/robot_state.proto", "authority": "control-via-lease", "timing": "request-response-and-stream"},
+    {"id": "ros-action", "protocol": "ROS2-Action", "from": "orchestrator", "to": "ros-action", "contract_path": "contracts/ros/action/MoveJoint.action", "authority": "supervisor-gated", "timing": "feedback-and-terminal"},
+    {"id": "ros-authority", "protocol": "ROS2-Service", "from": "ros-action", "to": "supervisor", "contract_path": "contracts/ros/srv/AuthorizeMotion.srv", "authority": "independent-safety-check", "timing": "before-motion"},
+    {"id": "gazebo-state", "protocol": "ROS2-Topic", "from": "gazebo", "to": "orchestrator", "contract_path": "contracts/ros/msg/RobotState.msg", "authority": "observation-only", "timing": "simulation-clock"},
+    {"id": "state-storage", "protocol": "PostgreSQL", "from": "gateway", "to": "timescaledb", "contract_path": "infra/migrations/0001_robot_state.sql", "authority": "telemetry-only", "timing": "bounded-write-queue"}
+  ],
+  "hazards": [
+    {"id": "H-01", "name": "Motion without exclusive authority", "control_component_ids": ["supervisor", "gateway"], "test_paths": ["ros_ws/src/safety_supervisor/test/test_safety_rules.cpp", "tests/test_planning.py"], "residual_risk": "Simulation-only; no physical safety certification"},
+    {"id": "H-02", "name": "Stale or mismatched state used for execution", "control_component_ids": ["gateway", "supervisor"], "test_paths": ["tests/test_planning.py", "scripts/smoke-control.py"], "residual_risk": "Delay and sensor-loss drills remain unverified"},
+    {"id": "H-03", "name": "Emergency stop bypassed by planner", "control_component_ids": ["supervisor", "ros-action"], "test_paths": ["ros_ws/src/safety_supervisor/test/test_safety_rules.cpp", "scripts/smoke-control.py"], "residual_risk": "Simulated EStop is not a hardware safety circuit"}
+  ],
+  "edge_profiles": [
+    {"id": "local-compose", "target": "local Docker Desktop", "status": "local-simulation", "measurement_path": "", "note": "Functional smoke only; CPU, GPU, memory, power and thermal budgets are not measured"},
+    {"id": "embedded-target", "target": "unspecified edge hardware", "status": "not-measured", "measurement_path": "", "note": "No hardware target or measured resource envelope supplied"}
+  ],
+  "external_evidence": [
+    {"id": "ai-p64", "status": "unavailable", "reason": "Only README found; no versioned scenarios, planner traces or evidence bundle"},
+    {"id": "ai-p65", "status": "unavailable", "reason": "Only README found; no edge profile, measurements or evidence bundle"}
+  ]
+}

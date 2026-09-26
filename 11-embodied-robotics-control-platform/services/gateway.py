@@ -16,6 +16,7 @@ import grpc
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from services.architecture import android_evidence_contract, architecture_catalog
 from services.control_api import create_router
 from services.generated import robot_state_pb2, robot_state_pb2_grpc
 
@@ -230,6 +231,19 @@ async def persist_loop_events() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    catalog = architecture_catalog()
+    connection = await asyncpg.connect(os.environ["DATABASE_URL"], timeout=5)
+    try:
+        await connection.execute(
+            "INSERT INTO architecture_manifest_snapshots "
+            "(manifest_sha256, schema_version, payload) VALUES ($1, $2, $3::jsonb) "
+            "ON CONFLICT (manifest_sha256) DO NOTHING",
+            catalog["manifest_sha256"],
+            catalog["schema_version"],
+            json.dumps(catalog),
+        )
+    finally:
+        await connection.close()
     reader = asyncio.create_task(consume_ros_state())
     writer = asyncio.create_task(persist_state())
     loop_reader = asyncio.create_task(consume_ros_loop())
@@ -250,6 +264,56 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+@app.get("/api/v3/architecture/manifest")
+def architecture_manifest() -> dict[str, Any]:
+    """Public evidence catalog; never grants command authority."""
+    return architecture_catalog()
+
+
+@app.get("/api/v3/architecture/android-evidence")
+def android_architecture_evidence() -> dict[str, Any]:
+    """Versioned read-only export boundary for a future Project 66 blueprint."""
+    return android_evidence_contract()
+
+
+@app.get("/api/v3/architecture/snapshots")
+async def architecture_snapshots(limit: int = 10) -> dict[str, Any]:
+    if not 1 <= limit <= 50:
+        raise HTTPException(422, detail="invalid limit")
+    connection = await asyncpg.connect(os.environ["DATABASE_URL"], timeout=5)
+    try:
+        rows = await connection.fetch(
+            "SELECT manifest_sha256, schema_version, recorded_at "
+            "FROM architecture_manifest_snapshots "
+            "ORDER BY recorded_at DESC, manifest_sha256 LIMIT $1",
+            limit,
+        )
+    finally:
+        await connection.close()
+    return {
+        "snapshots": [{**dict(row), "recorded_at": row["recorded_at"].isoformat()} for row in rows]
+    }
+
+
+@app.get("/api/v3/architecture/health")
+def architecture_health() -> dict[str, Any]:
+    """Runtime observations are kept separate from source declarations."""
+    latest = hub.latest
+    age_ms = (
+        max(0, (time.time_ns() - latest["observed_wall_time_ns"]) // 1_000_000)
+        if latest is not None
+        else None
+    )
+    return {
+        "schema_version": "architecture-health.v1",
+        "run_id": latest["run_id"] if latest else None,
+        "state_age_ms": age_ms,
+        "simulation_state": "live" if age_ms is not None and age_ms <= 1000 else "unavailable",
+        "telemetry_database": "ready" if hub.database_ready else "unavailable",
+        "dropped_write_samples": hub.dropped_write_samples,
+    }
 
 
 @app.get("/health/live")

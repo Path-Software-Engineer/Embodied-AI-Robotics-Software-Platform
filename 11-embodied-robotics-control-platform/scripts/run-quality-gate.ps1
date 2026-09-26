@@ -22,6 +22,7 @@ $env:PYTHONPATH = "$Root;$Root\services\generated"
 Invoke-Checked "Ruff lint" { & $Python -m ruff check services tests scripts --force-exclude }
 Invoke-Checked "Ruff format" { & $Python -m ruff format --check services tests scripts --force-exclude }
 Invoke-Checked "Python tests" { & $Python -m pytest -q }
+Invoke-Checked "Architecture manifest schema, graph and evidence" { & $Python scripts/validate-architecture.py }
 Invoke-Checked "Web TypeScript and production build" { npm run build --prefix apps/web }
 Invoke-Checked "Web tests" { npm run test --prefix apps/web }
 Invoke-Checked "Docker Compose model" { docker compose config --quiet }
@@ -61,7 +62,7 @@ try {
     Write-Host "[5/5] Repository hygiene"
     Invoke-Checked "Git whitespace" { git diff --check }
     Invoke-Checked "Staged Git whitespace" { git diff --cached --check }
-    Write-Host "OK - Project 11 Sprint 2 core quality gate passed (see docs/sprint-02/review.md)"
+    Write-Host "OK - Project 11 Sprint 3 architecture slice gate passed (see docs/sprint-03/review.md)"
 }
 finally {
     docker compose down --remove-orphans | Out-Null

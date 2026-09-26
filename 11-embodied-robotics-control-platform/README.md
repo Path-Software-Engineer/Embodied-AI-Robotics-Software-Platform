@@ -8,6 +8,8 @@ Sprint 1 — Embodied Agent Loop Visualizer — quedó etiquetado como `v0.1.0-s
 
 El [brief original del proyecto](docs/original-project-brief.md) se conserva íntegro como referencia del roadmap. Los límites del control path están en [control-path.md](docs/sprint-02/control-path.md) y la evidencia de riesgos en [safety-case.md](docs/sprint-02/safety-case.md).
 
+El Sprint 3 tiene un primer estudio de arquitectura conectado al código y a la simulación: manifest versionado, referencias SHA-256, grafo de protocolos, controles/riesgos, salud observada, historial persistido y contrato de evidencia de solo lectura para P66. **No equivale al cierre del Sprint 3**; los límites y pendientes están en [su revisión](docs/sprint-03/review.md). La API pública de consulta está bajo `/api/v3/architecture/` y no otorga autoridad de control.
+
 ## Fronteras
 
 ```text

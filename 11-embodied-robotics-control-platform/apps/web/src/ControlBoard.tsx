@@ -118,7 +118,7 @@ export function ControlBoard({ liveState, replaying, loopEvents }: {
   const needsReview = enabled && confirmed && reason.trim().length >= 5
 
   return (
-    <section className="panel control-board" aria-label="Control board supervisado">
+    <section className="panel control-board" id="control" aria-label="Control board supervisado">
       <div className="panel-heading">
         <div><p className="panel-kicker">SPRINT 02 / HUMAN AUTHORITY</p><h2>Robot task planning</h2></div>
         <span className="read-only">{replaying ? 'REPLAY: CONTROL BLOQUEADO' : 'SIMULATION ONLY'}</span>

@@ -1,0 +1,15 @@
+{
+  "schema_version": "android-architecture-evidence.v1",
+  "producer": "embodied-robotics-control-platform",
+  "consumer": "ai-project-66",
+  "scope": "simulation-only",
+  "architecture_manifest": "architecture/manifest.v1.json",
+  "exported_component_ids": ["web", "gateway", "orchestrator", "ros-action", "supervisor", "gazebo", "timescaledb"],
+  "interface_ids": ["web-http", "web-stream", "gateway-grpc", "ros-action", "ros-authority", "gazebo-state", "state-storage"],
+  "evidence_policy": "Source references are SHA-256 checked at export. Runtime health and tests require separate observations.",
+  "limitations": [
+    "No physical robot, sensor, actuator or certified safety evidence is exported.",
+    "P64/P65 evidence bundles and edge measurements are unavailable.",
+    "This contract does not modify Project 66 or authorize command execution."
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://path-software-engineer.invalid/architecture-manifest.v1.schema.json",
+  "title": "ArchitectureManifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "system_id", "scope", "components", "interfaces", "hazards", "edge_profiles", "external_evidence"],
+  "properties": {
+    "schema_version": {"const": "architecture-manifest.v1"},
+    "system_id": {"const": "embodied-robotics-control-platform"},
+    "scope": {"const": "simulation-only"},
+    "components": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["id", "name", "kind", "owner", "evidence_paths", "depends_on"], "properties": {"id": {"$ref": "#/$defs/id"}, "name": {"type": "string", "minLength": 1}, "kind": {"enum": ["web", "service", "ros-node", "simulator", "database"]}, "owner": {"type": "string", "minLength": 1}, "evidence_paths": {"$ref": "#/$defs/paths"}, "depends_on": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}}}}},
+    "interfaces": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["id", "protocol", "from", "to", "contract_path", "authority", "timing"], "properties": {"id": {"$ref": "#/$defs/id"}, "protocol": {"enum": ["HTTP", "WebSocket", "gRPC", "ROS2-Action", "ROS2-Service", "ROS2-Topic", "PostgreSQL"]}, "from": {"$ref": "#/$defs/id"}, "to": {"$ref": "#/$defs/id"}, "contract_path": {"$ref": "#/$defs/path"}, "authority": {"type": "string", "minLength": 1}, "timing": {"type": "string", "minLength": 1}}}},
+    "hazards": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "name", "control_component_ids", "test_paths", "residual_risk"], "properties": {"id": {"$ref": "#/$defs/id"}, "name": {"type": "string", "minLength": 1}, "control_component_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}}, "test_paths": {"$ref": "#/$defs/paths"}, "residual_risk": {"type": "string", "minLength": 1}}}},
+    "edge_profiles": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "target", "status", "measurement_path", "note"], "properties": {"id": {"$ref": "#/$defs/id"}, "target": {"type": "string", "minLength": 1}, "status": {"enum": ["local-simulation", "not-measured", "measured"]}, "measurement_path": {"type": "string"}, "note": {"type": "string", "minLength": 1}}}},
+    "external_evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "reason"], "properties": {"id": {"$ref": "#/$defs/id"}, "status": {"enum": ["unavailable", "verified"]}, "reason": {"type": "string", "minLength": 1}}}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{1,63}$"},
+    "path": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\.\\.)[A-Za-z0-9_./-]+$"},
+    "paths": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/path"}}
+  }
+}

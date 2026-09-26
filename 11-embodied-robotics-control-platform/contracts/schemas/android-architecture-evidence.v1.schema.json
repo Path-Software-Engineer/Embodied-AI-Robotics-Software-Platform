@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://path-software-engineer.invalid/android-architecture-evidence.v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "producer", "consumer", "scope", "architecture_manifest", "exported_component_ids", "interface_ids", "evidence_policy", "limitations"],
+  "properties": {
+    "schema_version": {"const": "android-architecture-evidence.v1"},
+    "producer": {"const": "embodied-robotics-control-platform"},
+    "consumer": {"const": "ai-project-66"},
+    "scope": {"const": "simulation-only"},
+    "architecture_manifest": {"const": "architecture/manifest.v1.json"},
+    "exported_component_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "interface_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "evidence_policy": {"type": "string", "minLength": 1},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}

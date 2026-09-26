@@ -14,7 +14,11 @@ RUN python3 -m venv --system-site-packages /opt/embodied-venv \
     && /opt/embodied-venv/bin/pip install --no-cache-dir -r services/requirements.lock
 ENV PATH=/opt/embodied-venv/bin:$PATH
 ENV PYTHONPATH=/workspace:/workspace/services/generated
-COPY contracts/proto contracts/proto
+COPY contracts contracts
+COPY architecture architecture
+COPY apps/web/src apps/web/src
+COPY infra/migrations infra/migrations
+COPY tests tests
 COPY services services
 RUN python -m grpc_tools.protoc -I contracts/proto \
     --python_out=services/generated --grpc_python_out=services/generated \
